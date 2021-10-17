@@ -29,7 +29,8 @@ public class SmsService {
         params.put("password", "j6DWtQjjpLDNjWEk74Sx");
         ResponseEntity<Result> response
                 = restTemplate.postForEntity(fooResourceUrl,params, Result.class);
-        SmsConstant.setToken(Objects.requireNonNull(response.getBody()).getMessage());
+        SmsConstant.setToken(Objects.requireNonNull(response.getBody()).getData().getToken());
+
         System.out.println(SmsConstant.getToken());
     }
 }

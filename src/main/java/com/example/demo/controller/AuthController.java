@@ -3,9 +3,10 @@ package com.example.demo.controller;// Author - Orifjon Yunusjonov
 
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ResourceNotFoundException;
+import com.example.demo.json.SendSms;
+import com.example.demo.security.SmsConstant;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -20,8 +21,10 @@ import com.example.demo.service.UserService;
 import org.springframework.web.client.RestTemplate;
 
 import java.lang.module.ResolutionException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -52,16 +55,44 @@ public class AuthController {
         return ResponseEntity.ok(userService.save(userPayload));
     }
 
-    /*
-    @PostMapping("/forgot")
-    public ResponseEntity forgot(@RequestParam String username) {
+    @PostMapping("/forgot/{username}")
+    public ResponseEntity forgot(@PathVariable String username) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new ResolutionException("user not found"));
         if (user==null){
             return new ResponseEntity(HttpStatus.BAD_REQUEST);
         }
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<>
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth(SmsConstant.getToken());
+        String url = new String("https://notify.eskiz.uz/api/message/sms/send");
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("mobile_phone", "998932099924");
+        int rand = new Random().nextInt(99999)+100000;
+        params.put("message", String.valueOf(rand +" bu sms test uchun"));
+        params.put("from", "4546");
+        params.put("callback_url", "http://0000.uz/test.php");
+        HttpEntity<?> request = new HttpEntity<>(params, headers);
+        ResponseEntity<SendSms> response = restTemplate.postForEntity(url,request,SendSms.class);
+        if (response.getStatusCode()==HttpStatus.OK){
+            String urlRes = "https://notify.eskiz.uz/api/message/sms/status/"+response.getBody().getId();
+            request = new HttpEntity<>(headers);
+            ResponseEntity<String> responseEntity = restTemplate.exchange(
+                    urlRes,
+                    HttpMethod.GET,
+                    request,
+                    String.class,
+                    1
+            );
+            if (response.getStatusCode()==HttpStatus.OK){
+                return ResponseEntity.ok("sas");
+            } else {
 
-    }*/
+                return new ResponseEntity(HttpStatus.BAD_REQUEST);
+            }
+        }
+        return new ResponseEntity(HttpStatus.BAD_REQUEST);
+    }
 
 }
